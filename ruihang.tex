@@ -1,0 +1,608 @@
+\documentclass[fleqn,10pt]{wlscirep}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{subfigure}
+\usepackage{cleveref}
+\usepackage{cite}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage[colorinlistoftodos]{todonotes}
+
+\def\bm#1{\mbox{\boldmath{$#1$}}}
+
+\newcommand*{\V}[1]{\bm{\mathbf #1}}
+%\newcommand*{\V}[1]{\bm{\mathbm #1}}
+
+
+\title{Some Effects of Different Constitutive Laws on FSI Simulation for the Mitral Valve}
+
+\author[1]{Li Cai}
+\author[1,*]{Ying Wang}
+\author[2]{Hao Gao}
+\author[3]{Xingshuang Ma}
+\author[4]{Guangyu Zhu}
+\author[1,*]{Ruihang Zhang}
+\author[5]{Xiaoqin Shen}
+\author[2]{Xiaoyu Luo}
+\affil[1]{NPU-UoG International Cooperative Lab for Computation and Application in Cardiology, Northwestern Polytechnical University, Xi'an, 710129, China}
+\affil[2]{School of Mathematics and Statistics, University of Glasgow, Glasgow, G12 8QQ, UK}
+\affil[3]{Bioengineering College, Chongqing University, Chongqing, 400030, China}
+\affil[4]{School of Energy and Power Engineering, Xi'an Jiaotong University, Xi'an, 710049, China}
+\affil[5]{School of Sciences, Xi'an University of Technology, Xi'an, 710048, China}
+\affil[*]{Corresponding authors: wangying319@mail.nwpu.edu.cn, ruihangz0313@mail.nwpu.edu.cn}
+
+
+%\keywords{Keyword1, Keyword2, Keyword3}
+
+\begin{abstract}
+
+In this paper, three different constitutive laws for mitral leaflets and two laws for chordae tendineae are selected to study their effects on mitral valve dynamics with fluid-structure interaction. We first fit these three mitral leaflet constitutive laws and two chordae tendineae laws with experimental data. The fluid-structure interaction  is implemented in an immersed boundary framework with finite element extension for solid, that is the hybrid immersed boundary/finite element(IB/FE) method.  We specifically compare the fluid-structure results of different constitutive laws since fluid-structure interaction is the physiological loading environment.  This allows us to look at  the peak jet velocity, the closure regurgitation volume, and the orifice area. 
+Our numerical results show that different constitutive laws can affect mitral valve dynamics, such as the transvalvular flow rate, closure regurgitation and the orifice area, while the differences in fiber strain and stress are insignificant because all leaflet constitutive laws are fitted to the same set of experimental data. In addition, when an exponential constitutive law of chordae tendineae is used, a lower closure regurgitation flow is observed compared to that of a linear material model.  In conclusion, combining numerical dynamic simulations and static experimental tests, we are able to identify suitable constitutive laws for dynamic behaviour of mitral leaflets and chordae under physiological conditions. 
+
+\end{abstract}
+\begin{document}
+
+\flushbottom
+\maketitle
+% * <john.hammersley@gmail.com> 2015-02-09T12:07:31.197Z:
+%
+%  Click the title above to edit the author information and abstract
+%
+\thispagestyle{empty}
+
+%\noindent Please note: Abbreviations should be introduced at the first mention in the main text - no abbreviations lists. Suggested structure of main text (not enforced) is provided below.
+
+\section*{Introduction}
+
+Because mitral valve (MV) has a very complex tissue structure, any change or loss of its structure will lead to valve diseases. In recent years, valve disease have become one of the major cardiovascular diseases\,\cite{heartvalveManagement2017}. 
+%About 300000 patients with heart valve diseases need valve repair or replacement every year in the world. 
+It is estimated that 850000 patients will be treated with valve replacement by 2050\,\cite{BAX2017388}. It is being recognized that the mathematical modelling and numerical simulation of the interaction between MV and blood flow are of great value and significance to deepen our understanding of valve-related diseases and treatment\,\cite{Fried2014Computational,sun2014computational,sacks2019simulation,GaoQi-2017}.
+
+Since early of the 19th century, researchers began to study MV geometric features and have made great progress. 
+Different types of MV model have been developed for simulating MV dynamics, such as  symmetrical geometries\,\cite{Kunzelman1993,Kunzelman1997,Lau2010,Zhong2014}, and idealized parametric models\,\cite{Shen2017}. The rapid development of  non-invasive clinical  imaging technologies, such as ultrasound, computed tomography and  magnetic resonance, have allowed the construction of patient-specific MV model. For example, Lim et al.\,\cite{Lim2005Three} built an asymmetric MV model with three-dimensional (3-D) dynamic boundaries and non-linear pressure loadings over the whole cardiac cycle based on in-vivo experimental data. Wenk et al.\,\cite{Wenk2010First} developed a finite element (FE) model consisting of the left ventricle, the MV leaflet and chordae tendineae using magnetic resonance images of sheep. Wang et al.\,\cite{Wang2012Patient} reconstructed a patient-specific MV geometry using a  multi-slice CT scan with detailed leaflet thickness and chordae tendineae structure. Ma et al.\cite{Ma:2013fr} and Gao et al. \cite{Hao2014A} developed MV models based on magnetic resonance images with fluid-structure interaction (FSI). In a recent study, Toma et al.\,\cite{Toma2016Fluid} constructed a MV model based on a sheep $\mu$CT image data. 
+
+%Then, the left ventricle was added to the model to simulate the realistic mitral valve environment for the first time. Although the real mitral valve model is quite complex, it is very important for us to study the physiological function and clinical application of mitral valve.
+
+%such as work done by  Kunzelman et al. , Lau et al {}  and Zhong et al.\cite{}.  established and modified  a three-dimensional finite element model of mitral valve\textcolor{red}{ do not understand}.  These models belong to classical symmetrical geometric models, and have certain value for the study of mitral valve.  Shen et al.\cite{Shen2017,Shen2018,Shen2019} established a parametric model of mitral valve shape, in which the mitral valve was regarded as an elastic shell element with special shape. With the improvement of computer computing performance and 
+
+Early mechanical studies considered  MV material as a linear elastic material\,\cite{Salgo2002Effect,Watton2008Effect,Luo2014MV} due to its simplicity. However, various mechanical stretching experiments  have shown that MV leaflets have  characteristics of hyperelasticity and anisotropy\,\cite{Prot2006An,Prot2009Nonlinear,Prot2010On,May1995Biaxial,Sacks2003Incorporation,Rabbah2013Mechanics}. May-newman and Yin\,\cite{May1998A} described the nonlinear mechanical behaviors of porcine MV leaflet, and they demonstrated that the constitutive law could be derived from the hyperelastic framework under the assumption of material incompressibility and transverse isotropy. Prot et al.\,\cite{Prot2009Finite} proposed two transversely isotropic hyperelastic laws for MV leaflet, and their results showed that their constitutive laws could be used to describe the mechanical properties of the normal and pathological mitral valve.  Wang et al.\,\cite{Wang2012Patient} employed a similar constitutive law by considering two family collagen fibers and associated dispersion with parameters estimated from ex vivo experiemental data. Gao et al.\,\cite{Hao2014A,Gao2017A} studied  MV dynamics using a  transverse isotropic strain-invariants  law. There are many other forms of constitutive laws for MV leaflets existed in the literature, however, there is no agreement on which law best characterizes MV properties and predicts its dynamics. 
+
+%based on the nonlinear constitutive model of the valve material. It was found that the stress concentration region of mitral valve was located at the edge of the annulus and the triangle of the valve.
+Modelling MV dynamics are often based on structure-only models using finite element method (FEM)\,\cite{Lim2005Three,Prot2009Finite,Liao1993}. In the structure-only models, the transvalvular pressure load is usually directly applied to the MV leaflets as the boundary conditions. FEM is usually used for numerical implementation to study  the normal MV dynamics\,\cite{Kunzelman1993},  diseased MV\,\cite{Kunzelman1997,Kunzelman1998Altered} ,  the postoperative repair\,\cite{Kunzelman1998Altered,Kunzelman1998Flexible}, etc. n a series of studies. Lee et al.\,\cite{LeeRabbah-2015,Lee2017} have developed a micro- and macro- anatomically accurate MV FE model 
+%multiscale biomechanical computational modeling framework 
+by incorporating fiber microstructure and interstitial cellular activities to study MV dynamics and facilitate treatment of diseased MV in a multiscale perspective. %by connecting cellular transduction to adaptions of tissure structure to organ-level mechanical responses,so as to investigate the mechanical properties of the mitral valve. 
+Besides, there were some FEM models of MV models by Wang\,\cite{Wang2012Patient} and Prot et al.\,\cite{Prot2009Finite,Prot2006An,Prot2009Nonlinear}. For recent reviews, readers are referred to\,\cite{sacks2019simulation,GaoQi-2017}.
+
+Physiological loading of the MV means that fluid-structure interaction (FSI) is also required to describe the MV dynamics. FSI models of MV have also been  developed for decades\,\cite{Watton2008Effect,Kunzelman2007Fluid,Hao2014A,Gao2017A,Xingshuang2013Image,Chung2014An} by taking account of not only the MV structure, but also the flow field of the blood. Arbitrary Lagrangian-Eulerian (ALE) method has been most widely used to address FSI problems. For example, Dimasi et al.\,\cite{RN2} used in vitro and  ALE FSI modeling to simulate the function of a bileaflet mechanical valves  in normal and stenotic conditions with symmetric and asymmetric leaflet opening. However, ALE usually requires mesh regeneration to deal with large structural deformation, which would lead to  computational difficulties when dealing with the MV dynamics. To overcome such difficulty, immersed boundary (IB) method\,\cite{peskin_2002} and  fictitious domain method\,\cite{sotiropoulos2009review} have been developed. For example, Hart et al.\,\cite{Hart2003A} and  Loon et al.\,\cite{Loon2006A} simulated  valvular function using the fictitious domain method to analyze the coupling effects of the blood and the  valve. Toma et al.\,\cite{Toma2016Fluid}  studied the chordal forces using an ovine FSI  MV system implemented with smoothed particle hydrodynamics, and validated with an advanced in vitro system.
+%\cite{Prot2006An,Prot2009Nonlinear,Prot2009Finite} used a three-dimensional FSI model to simulate the normal and pathological mitral valve function based on the finite element method. 
+%Watton et al.\cite{Watton2004Modelling} improved the IB method to deal with the bending surface and shear behavior of the mitral valve. 
+Our group has been developing FSI MV models using the IB approach over a decade. Watton et al.\,\cite{Watton2007Dynamic} used a classical IB method to model a prosthetic bileaflet valve, which agreed well with the numerical results of a commercial software ANSYS.  They also studied the effects of left ventricular motion on the MV dynamics\,\cite{Watton2008Effect}. Using an IB method, Luo et al.\,\cite{LuoGriffith-2012} studied the effects of valve dynamics including the bending stiffness of the valve leaflets and artificial chordae tendineae. Ma et al.\,\cite{Ma:2013fr} used a realistic MV model reconstructed from in vivo magnetic resonance imaging to study MV dynamics.  Because soft tissue in general is anisotropic, hyperelastic and nearly incompressible, Boffi et al.\,\cite{boffi2008hyper} developed an immersed boundary method with finite element discretization for the structure part.  Griffith and Luo\,\cite{Boyce2017Hybrid}  developed a hybrid approach by discretizing the incompressible Navier-Stokes equation by  finite difference and the immersed structure by finite element (IB/FE). The advantage of using FE is that hyper-elasticity can be incorporated with experimentally characterized constitutive laws, which can be difficult in classical IB methods in which solid is represented by pseudo fibers\cite{peskin_2002,LuoGriffith-2012}. By employing the IB/FE approach, Gao et al.\,\cite{Hao2014A} simulated MV dynamics using a MV geometry reconstructed from in vivo magnetic resonance images, and further extended to a coupled MV and left ventricle\,\cite{Gao2017A}.  In a recent study, Liu et al.\,\cite{feng2018chordae} studied the energy budget in an IB/FE MV model after a careful verification with the commercial FEM software ABAQUS. 
+
+%\textcolor{red}{HG: is Dimasi using IB/FE?}Dimasi \cite{RN2} et al. combined  in vitro and fluid-structure interaction  to simulate the function of the real mitral bileaflet mechanical valves in normal and pathological configurations.
+
+Recent experimental or computational studies have found that the chordae tendineae plays an important role in the realization of MV function\,\cite{Yin2010Effects,Meschini2018Effects,Casado2012Determination,Toma2016Fluid}. Therefore, it is necessary to incorporate suitable mechanial responses of chordae tendineae into MV models, particularly since most of the studies have used linear material models for chordae tendineae\,\cite{Kunzelman1993,Lau2010,Zhong2014}. 
+%Lam et al.\,\cite{Lam1970Morphology} studied the mechanical properties of the chordae tendineae by uniaxial and biaxial tensile testing. 
+There were a few studies on the mechanical properties of the chordae tendineae using uniaxial tensile testing,  on leaflet type\,\cite{Zuo2016Characterization}, insertion position\,\cite{RITCHIE2005189} or chordal size\,\cite{LIAO20031125}. These studies showed that the chordae tendineae exhibits nonlinear mechanical properties and the thicker chords (strut chordae) are more extensible with lower modulus than the thinner chords (marginal chordae). However, recent uniaxial experiments with more accurate digital image tracking system from Sun's group\,\cite{Zuo2016Characterization,POKUTTAPASKALEVA2019241} showed that there was no significant difference in tangent modulus between different kinds of chordae. 
+%\textcolor{red}{HG: please ask Ma to add some recent study on chordae experimental studies by Sun Wei. Prot\cite{Prot2010On} and  Prot et al.\cite{Prot2010On} combined the constitutive model with the experimental data to obtain the corresponding constitutive parameters.}
+
+Although tensile tests of MV and chordae are  important,  given that physiological loading condition is dynamic and  involves FSI, it is also important to evaluate the mechanical responses using various different constitutive laws with a dynamic mitral FSI system.  To our best knowledge, this approach   has not been fully exploited. In this study, we aim to compare three different  constitutive laws for MV leaflets and two constitutive laws for chordae tendineae using an IB/FE FSI MV model developed earlier\,\cite{Hao2014A}, and to identify suitable constitutive laws that gives the optimal performance of MV dynamics. 
+
+
+\section*{Results}
+
+\subsection*{The effects of different constitutive laws of MV leaflets}
+With the same linear elastic constitutive law of chordae tendineae, cases M1, M2 and M3 are used to describe the mechanical properties of valve leaflets. For all three cases, the MV is fully opened at $t=0.1s$ with a pressure gradient of $10$mmHg; at $t=0.22s$, the mitral valve is just closed with a  pressure difference of around $80$mmHg; and at $t=0.35s$, the MV is fully loaded, the pressure gradient reaches $150$mmHg. %The three material models fully open and just close at the same time. %\textcolor{red}{do the three models open and close at same time?}
+Table~\ref{tab:MML} shows the average and maximum displacements with three constitutive laws at fully-opened and fully-loaded states. We can see that there are some differences among the three cases. For example, the average displacement from case M3 is the largest when fully opened, while that of case M1 is the largest when fully loaded. This indicates that different leaflets constitutive laws would affect MV dynamics with FSI.
+
+%Then, the influence of three different constitutive models of the mitral valve leaflets is studied based on the FSI simulation.
+\begin{table}[!h]
+	\centering
+	\caption{\bf The average and maximum displacements.}
+	\label{tab:MML}
+	\begin{tabular}{ccccc}
+		\hline
+		& \multicolumn{2}{c}{Average displacement (cm)}& \multicolumn{2}{c}{Maximum displacement (cm)}\\\cline{2-5}
+		Constitutive law&Fully opened&Fully loaded&Fully opened&Fully loaded\\
+		\hline
+		\text{M}1 & $0.16 \pm 0.30$ & $0.26 \pm 0.37$ & 1.21 & 1.59\\
+		\text{M}2 & $0.14 \pm 0.24$ & $0.20 \pm 0.31$ & 1.13 & 1.54 \\
+		\text{M}3 & $0.20 \pm 0.36$ & $0.25 \pm 0.38$ & 1.38 & 1.52\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{figure}[!ht]
+	\centering
+    \includegraphics[scale=1]{r1.pdf}
+	\caption{{\bf The fluid velocity field with three leaflet constitutive laws at fully-opened and just-closed states:} Fully-opened (panels a and c and e), just-closed (panels b and d and f).}
+	\label{mml}
+\end{figure}
+
+
+
+%By comparing transversely, we find that the displacement of the valve blade at fully loaded  is larger than that at fully opened, whether it is the average displacement or the maximum displacement. Through longitudinal comparison, it can be found that the displacement of different constitutive models of valve leaflets are different at the same time. Among them, 
+
+Fig.\,\ref{mml} shows the velocity fields at fully-opened and just-closed states  using the three constitutive laws of leaflets, respectively. It can be found that  at fully-opened state (Figs.\,\ref{mml}(a) and (c) and (e)), a strong jet is formed toward the outlet (the left ventricle side). When the MV is just closed (Figs.\,\ref{mml}(b) and (d) and (f)), the MV leaflets prevent further blood flowing back into the left atrium side with a clear closure regurgitation, especially in cases M1 and M3. Although the general flow fields in the three cases are similar,  there are some minor differences. For example, the jet in case M1 at fully-opened state is stronger than the other two cases, while the closure regurgitation flow is stronger in case M3  than other two cases.  The peak jet velocity at different times are given in Table~\ref{fv}. Slightly lower peak velocities can be found in case M2.
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf Peak velocity of transvalvular flow}
+	\begin{tabular}{cccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		& \multicolumn{3}{c}{Maximum velocity of flow field (m/s)}\\\cline{2-4}
+		Constitutive model & fully opened & just closed & fully loaded \\\hline
+		\text{M}1 & 2.0 & 2.3 & 0.7 \\
+		\text{M}2 & 2.0 & 1.9 & 0.7 \\
+		\text{M}3 & 2.1 & 2.4 & 0.9 \\
+		\hline
+	\end{tabular}
+	\label{fv}
+\end{table}
+
+
+\begin{figure}[!b]
+	\centering
+    \includegraphics[scale=1]{r2.pdf}
+	\caption{{\bf Fiber strain distributions of three constitutive laws of valve leaflet:} Fully-opened (panels a and d and g), just-closed (panels b and e and h), and fully-loaded (panels c and f and i).}
+	\label{SS1}
+\end{figure}
+
+Figs.\,\ref{SS1} and \ref{SS2} show the fiber strain and  stress distributions. When the MV leaflets are fully opened, both the anterior and posterior leaflets are stretched along the fiber direction with low stress due to low diastolic loading. With increased transvalvular pressure, the valve leaflets start to  close. When the valve is fully loaded,  regions near commissures  are highly compressed in cases M1 and M3, but not in case M2. The MV leaflets are further pushed towards the left atrium side with increased pressure, better closer configurations are achieved in cases M1 and M3 with smaller orifice area compared to case M2 at fully-loaded state. When the MV is closed, all cases show high stress concentration near the annulus region, the stress level in case M2 is higher than the other two cases. In order to further analyze fiber strain and stress of leaflets, we define three local regions at the anterior leaflet: two trigones and one belly region, as shown in Fig.\,\ref{fig:SS}. The average fiber stress and strain of these regions are summarized in Tables~\ref{FD1} and \ref{FD2}, respectively. When the MV is fully opened, the stress in the belly region is greater than that in the trigone regions; when the MV is just closed, the stress of leaflets begin to increase with much higher values  in the trigones than that in the belly region; the stresses of the MV continue to increase until the MV is fully loaded. We note that at fully-opened state, all three cases experience similar stress level, while at just-closed and fully-loaded states, case M3 seems experiencing lower stress level compared with other two cases which may be caused by higher level compression in the leaflets (Fig.\ref{SS1}(h)). 
+ 
+ %difference in stress between M1 and M2, while M3 experiences a lower level of stress compared with other two cases; at just closed, the stress level in M2 is highest, and lowest in M3; similar results can be found when the mitral valve is fully loaded. \textcolor{blue}{These results are similar with the data in papers\cite{Hao2014A,GaoQi-2017}.}
+
+%Next, longitudinal comparisons show that three mitral valve leaflets exhibit lower strain and stress when the valve leaflets are fully opened. However, the stress in the belly region of M2 is higher than that of others. When the leaflets are just closed and the leaflets are fully loaded, there are significant differences among the three models. Among them, the strain of M1 and M3 mainly concentrate on two sides of the valve belly, while stress mainly concentrate on the annulus area. The stress of M2 seems to be higher than that of others, but the stress is concentrated in the whole annulus, and the stress of the posterior leaflet seems to be higher than that of others.
+
+\begin{figure}[!h]
+	\centering
+    \includegraphics[scale=1]{r3.pdf}
+	\caption{{\bf  Fiber stress distributions of three constitutive laws of valve leaflets:} Fully-opened (panels a and d and g), just-closed (panels b and e and h), and fully-loaded (panels c and f and i).}
+	\label{SS2}
+\end{figure}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[scale=1]{r4.pdf}
+	\caption{\bf Three predefined local regions in the anterior leaflet for stress and strain calculation}
+	\label{fig:SS}
+\end{figure}
+
+\begin{figure}[!pbt]
+	\centering
+	\includegraphics[scale=1]{r5.pdf}
+	\caption{\bf Flow rates with three material models for MV leaflets.}
+	\label{fig:FL}
+\end{figure}
+
+\begin{table}[!hpt]
+	\caption{\bf  Average stresses along fiber direction on three local regions.}
+	\centering
+	\begin{tabular}{cccccccccccc}
+		\hline
+		& \multicolumn{11}{c}{Average stress along fiber direction (kPa)} \\\hline
+		& \multicolumn{3}{c}{Fully opened} & & \multicolumn{3}{c}{Just closed} & & \multicolumn{3}{c}{Fully loaded}\\\cline{2-4}\cline{6-8}\cline{10-12}
+		Model & \text{M}1 & \text{M}2 & \text{M}3 & & \text{M}1 & \text{M}2 & \text{M}3 & & \text{M}1 & \text{M}2 & \text{M}3 \\\hline
+		Trigon 1 & 34 & 28 & 6 & & 130 & 180 & 89 & & 255 & 325 & 238 \\
+		Trigon 2 & 18 & 18 & 12 & & 142 & 213 & 110 & & 280 & 439 & 260 \\
+		The belly region & 52 & 59 & 16 & & 78 & 147 & 62 & & 127 & 283 & 124 \\
+		\hline
+	\end{tabular}
+	\label{FD1}
+\end{table}
+
+\begin{table}[!hpbt]
+	\caption{\bf  Average strains along fiber direction on  three local regions.}
+	\centering
+	\begin{tabular}{cccccccccccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		& \multicolumn{11}{c}{Average strain along fiber direction} \\\hline
+		& \multicolumn{3}{c}{Fully opened} & & \multicolumn{3}{c}{Just closed} & & \multicolumn{3}{c}{Fully loaded}\\\cline{2-4}\cline{6-8}\cline{10-12}
+		Model & \text{M}1 & \text{M}2 & \text{M}3 & & \text{M}1 & \text{M}2 & \text{M}3 & & \text{M}1 & \text{M}2 & \text{M}3 \\\hline
+		Trigon 1 & 0.10 & 0.10 & 0.10 & & 0.09 & 0.09 & 0.08 & & 0.07 & 0.09 & 0.07 \\
+		Trigon 2 & 0.10 & 0.10 & 0.10 & & 0.09 & 0.10 & 0.08 & & 0.08 & 0.09 & 0.07 \\
+		The belly region & 0.10 & 0.12 & 0.10 & & 0.10 & 0.10 & 0.10 & & 0.10 & 0.12 & 0.10 \\
+		\hline
+	\end{tabular}
+	\label{FD2}
+\end{table}
+
+
+
+%\begin{figure}[!pbt]
+%	\centering
+%	\includegraphics[scale=0.75]{fig/TPG.png}
+%	\caption{\bf The comparison of transvalvular pressure gradient with three MV leaflets models.}
+%	\label{fig:TPG}
+%\end{figure}
+
+
+
+
+
+
+
+The transvalvular flow rates for all three cases are shown in Fig.\,\ref{fig:FL}. The flow rate of case M3 is higher than cases M1 and M2 in the diastolic filling phase (before 0.17 s), with M2 the lowest. When the MV begins to close, the flow rate decreases to a negative value when the closure regurgitation occurs. The regurgitation flow rates of cases M1 and M2 are similar, but much larger in case M3. Finally, the MV flow rate gradually returns to zero when the MV is fully closed. The regurgitation flow during MV closure are listed in Table~\ref{EOA}. The results are consistent with the values from our previous work\,\cite{Hao2014A}. It can be found case  M2 has the smallest regurgitation closing flow, while highest in case M3.
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf Regurgitation flow (mL) during MV closure.}
+	\begin{tabular}{cccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		%& \multicolumn{3}{c}{Maximum velocity of flow field (m/s)}\\\cline{2-4}
+		& M1 & M2 & M3 \\\hline
+		%\textcolor{blue}{Effective orifice area} & \textcolor{blue}{7.8359} & \textcolor{blue}{7.2086} & \textcolor{blue}{8.9485} \\
+		Regurgitation flow & 11.5741 & 8.7164 & 13.2082 \\
+		\hline
+	\end{tabular}
+	\label{EOA}
+\end{table}
+
+%\textcolor{blue}{All these evalutions above are not fully connected with values in clinics. we present some clinical valuable markers such as the orifice area (OA), the amount of regurgitation and peak jet velocity, so as to provide evidences for mitral valve treatment.}
+
+
+
+%\textcolor{blue}{The transvalvular pressure gradients with three models are similar. The transvalvular pressure gradient here denotes the pressure difference of left ventricle and left atrium (i.e.left ventricle pressure subtracts left atrium pressure). Moreover, we find the transvalvular pressure gradient of M2 is a little higher than the others at fully loaded.}
+
+We further calculate the orifice area (OA) at fully-opened and just-closed states. 
+%It measures that the amount of blood flow impeded through the valve. 
+In general, the higher the OA, the smaller the energy loss\,\cite{Garcia-2006}. To calculate OA, the leaflet free-edges are first projected to the annular plane, and then the enclosed area by the project boundaries is considered to be the real OA. %\textcolor{red}{HG: add a reference here. Add a description of how OA is calculated} %The EOA can be calculated by \cite{LuoGriffith-2012}:
+%$$\mathit{EOA}=k\frac{\mathrm{Q}}{\sqrt{\Delta p}}$$
+%where $\mathrm{Q}$ denotes the flow rate in litre/min and $\Delta p$ is the pressure difference in mmHg, $k=1/0.7*44.5*0.06$. 
+Table~\ref{OA} shows that case M1 has the largest OA at fully-opened state and smallest OA at just-closed state, which indicates the impedance of case M1 in the diastolic filling is lower compared to other two cases and is closed more tightly in systole.  The OA values from the three cases at fully-opened state are also within the interval (4-6\,cm$^2$) given by Luo et al.\,\cite{LuoGriffith-2012}. 
+
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf Orifice area (cm$^2$) at different times.}
+	\begin{tabular}{cccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		%& \multicolumn{3}{c}{Maximum velocity of flow field (m/s)}\\\cline{2-4}
+		& M1 & M2 & M3 \\\hline
+		fully-opened & 4.956 & 4.810 & 4.828 \\
+		just-closed & 0.953 & 1.132 & 1.341 \\
+		\hline
+	\end{tabular}
+	\label{OA}
+\end{table}
+%\textcolor{blue}{From Fig~\ref{fig:FL}, we can see three constitutive models have a regurgitation closing flow. 
+
+%\textcolor{blue}{In addition, Table~\ref{OA} shows us M1 has a more opening state at fully opened, simultaneously keeps a smaller orifice when just closed. This indicates M1 is the best one compared others.}
+
+
+
+
+
+%we find that case M1 has the smallest square error compared with cases M2 and M3 as shown in Table~\ref{WW3}, and larger fitting error for the anterior leaflet  than that of the posterior leaflet. The comparison of  stretch-stress curves along fiber direction are shown in Fig.\,\ref{A_2}-\ref{P_2}.} %From the fitting images, the stress of the anterior and posterior leaflets with the constitutive \text{M}2 are higher than the selected experimental values. However, for the \text{M}3, the fitting stress of the anterior leaflet is slightly lower than the experimental values, and the fitting stress of the posterior leaflet is almost coincident with the experimental values. 
+
+
+
+In summary, of all three models, the constitutive law M2 has the lowest leaflet displacements, lowest peak velocities at fully-opened and closed state, highest fiber stress at fully-loaded state, and lowest OA when fully-opened and the larger OA at closure. The constitutive law M1 achieves largest OA at fully-opened state and lowest OA at fully-closed state, and smaller regurgitation closure flow. Therefore, the constitutive law M1 is deemed more suitable for predicting MV dynamics with FSI. In the next section, we will use the constitutive law M1 for MV leaflets to study the effects of two different material models of the chordae tendineae on MV dynamics.
+
+
+%Our numerical results show that when we use M1 as the constitutive law for MV leaflets, the average displacements of  leaflets at fully-open and fully-closed state  are comparable to other two constitutive laws,; the stress level of the leaflets is almost similar as that in the literature\cite{Sacks2003Incorporation}; and the flow rate analysis shows that the flow rate of M1 is between the other two. \textcolor{blue}{In a word, M1  has the best properties when considering all evaluations. This may be the reason why the constitutive law M1 is chosen as the criterion for describing the mechanical properties of the leaflets material in our work.} Based on the above results and the literature\cite{Hao2014A,Xingshuang2013Image,Jimenez2007A}, M1 can accurately reflect the mechanical properties of the mitral valve leaflets. So in the next section, we will consider the M1 for the mitral valve leaflets to study the effect of the different constitutive models of the chordae tendineae.
+
+
+\subsection*{The effects of different constitutive models of the chordae tendineae}
+
+%By using \text{M}1 as the constitutive model of the mitral valve leaflets, the influence of two different constitutive models of the chordae tendineae are studied.
+Table~\ref{tab:MML2} gives the displacements with different chordae constitutive laws. The average displacements are almost the same at fully-opened and  fully-loaded states, while the maximum displacement from the linear model is slightly larger than that of the exponential model at fully-opened and -closed states.
+
+\begin{figure}[!h]
+	\centering
+    \includegraphics[scale=1]{r6.pdf}
+	\renewcommand{\figurename}{Figure}
+	\caption{{\bf Strain and stress distributions with an exponential constitutive law of the chordae tendineae.} Fully-opened (panels a and d), just-closed (panels b and e), and fully-loaded (panels c and f).}
+	\label{SEA12}\quad
+\end{figure}
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf Average and maximum displacements from two chordae tendineae models.}
+	\label{tab:MML2}
+	\begin{tabular}{ccccc}
+		\hline
+		& \multicolumn{2}{c}{Average displacement (cm)}& \multicolumn{2}{c}{Maximum displacement (cm)}\\\cline{2-5}
+		Type of chordae tendineae constitutive law &Fully opened&Fully loaded&Fully opened&Fully loaded\\
+		\hline
+		Liner law & $0.16 \pm 0.30$ & $0.26 \pm 0.37$ & 1.21 & 1.59\\
+		Exponential law & $0.16 \pm 0.29$ & $0.25 \pm 0.38$ & 1.14 & 1.57 \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[!hpbt]
+	\caption{\bf  Average strain and stress along fiber direction on the three local regions using an exponential model for the chordae tendineae.}
+	\centering
+	\begin{tabular}{ccccccccc}
+		\hline
+		& \multicolumn{8}{c}{Average strain and stress along fiber direction} \\\hline
+		& \multicolumn{2}{c}{t = 0.1s} & & \multicolumn{2}{c}{t = 0.22s} & & \multicolumn{2}{c}{t = 0.35s}\\\cline{2-3}\cline{5-6}\cline{8-9}
+		Model & Strain & Stress (kPa) & & Strain & Stress (kPa) & & Strain & Stress (kPa) \\\hline
+		Trigon 1 & 0.10 & 39 & & 0.09 & 116 & & 0.07 & 241 \\
+		Trigon 2 & 0.09 & 36 & & 0.09 & 147 & & 0.08 & 282 \\
+		The belly region & 0.10 & 54 & & 0.10 & 74 & & 0.10 & 130 \\
+		\hline
+	\end{tabular}
+	\label{FD3}
+\end{table}
+
+\begin{figure}[!hpbt]
+	\centering
+	\includegraphics[scale=1]{r7.pdf}
+	\renewcommand{\figurename}{Figure}
+	\caption{{\bf The comparison of the flow rates with chordae tendineae constitutive laws .}}
+	\label{fig:FL2}
+\end{figure}
+
+We summarize the fiber stress and strain results  of the exponential model in Fig.\,\ref{SEA12}. Comparing with the case M1 of Fig.\,\ref{SS1} and Fig.\,\ref{SS2}, we find that the stress and strain distributions of the two chordae tendineae constitutive laws are  also similar. The average stress and strain of defined three regions for the exponential constitutive law are shown in Table~\ref{FD3}. Compared to the results for the linear model (case M1), the stress level of the exponential model is slightly higher than that of the linear model. Fig.\,\ref{fig:FL2} shows the flow rates through the MV, although slightly higher flow rate can be achieved in the linear model during diastolic filling phase (before 0.17 s), larger regurgitation closure flow exists compared to the exponential law,  suggesting that the MV closes  tighter  when an exponential law is chosen for  chordae tendineae. 
+%\textcolor{blue}{(11.57 mL vs. 10.83 mL)}. Thus, the exponential law for the chordae tendineae could achieve a better closure.  
+
+\section*{Discussion}
+
+In this paper, we use the IB/FE method to study the effects of different constitutive laws on MV dynamics with fluid-structure interaction. We select three different constitutive laws of MV leaflets and two material models for chordae tendineae. Parameters of different constitutive laws of leaflets are determined by matching the biaxial stretch-stress relationship along the fiber direction and the cross-fiber direction with  stretch-stress relationships derived from the constitutive law M1\,\cite{Hao2014A}. The fitted stretch-stress curves are shown in Figs.\,\ref{A_1}-\ref{P_1}. Constitutive parameters for  chordae tendineae are determined by fitting uniaxial stretching experiments of porcine chordae tendineae. All constitutive laws can capture the mechanical behavior of the MV with R-squared values similar, so then we compare the MV dynamic behaviors with different constitutive laws of the leaflet and  chordae tendineae. Results show that case M1 has the largest OA at fully-opened state and the smallest OA at just-closed state, the regurgitation closing flow of case M1 and the exponential chordae tendineae model are lower than others. Our results may suggest that the combination of  M1 constitutive law for the leaflet and the exponential law for  chordae tendineae would be more suitable for simulating MV dynamics with FSI.
+
+%Firstly, the parameters of different constitutive models are identified according to the mechanical properties of materials. Secondly, the optimal parameters are used to the mitral valve FSI system for numerical simulation. Finally, the numerical results of different constitutive models are visualized in the IB/FE system. The conclusion is that the Model 1 of the mitral valve leaflets and the exponential model of the chordae tendineae should be the ideal choice.
+
+%Compared with the symmetrical mitral geometry model in papers\,\cite{Kunzelman1993,Kunzelman1997}, the geometric model in this study is reconstructed from in vivo magnetic resonance imanging. 
+Through in vitro\,\cite{Sacks2003Incorporation,He2003Mitral,May1995Biaxial} and in vivo\,\cite{Sacks2006In} studies, many researchers have also studied the mechanical properties of MV by uniaxial and biaxial stretching experiments\,\cite{Prot2010On,Zuo2016Characterization}, and those experimental data have shown that valve leaflets and chordae tendineae have the characteristics of anisotropy and non-linearity. In papers\,\cite{Chung2014An,Votta2006Finite,Votta2007The,Loon2007Comparison}, linear elastic valve material models were used, which was impractical. Therefore, we choose fiber-reinforced constitutive laws for the MV leaflet\,\cite{Prot2009Nonlinear,Prot2010On} in this study, a common practice in current soft tissue modelling. We further find that the three selected MV leaflets constitutive laws can fit to our own porcine MV experiments very well, as shown in Fig.\,\ref{AP}.
+
+ The strain and stress distributions along fiber direction at different time are shown in Figs.\,\ref{SS1},\ref{SS2},\ref{SEA12}. It can be seen that for different constitutive laws, most of the leaflets regions are tensile along the fiber direction and some of regions are compressed at closed state, which is, in general, consistent with the results of the papers\,\cite{Prot2009Nonlinear,Prot2010On}. Detailed strain and stress analysis in three regions are given in Tables~\ref{FD1}-\ref{FD2} and Table~\ref{FD3}. In the paper\,\cite{Watton2007Dynamic}, the maximum fiber strain is 0.4, which is larger than our results. However, our model prediction of the circumferential stresses range seems to agree well with the measurements from in vivo measurements\,\cite{Sacks2003Incorporation,Einstein2005The}. For example, the circumferential stresses\,\cite{Sacks2003Incorporation,Einstein2005The} of valve leaflets range from 200 to 280 kPa at fully-loaded state. There are some differences among different constitutive laws for MV leaflets. For example, case M2 exhibits a greater stress on the posterior valves, while cases M1 and M3 experience almost the same stress level. In addition, we find that the stresses are mainly concentrated on the annulus ring and the edge of the MV leaflets during closure. When the exponential constitutive law of the chordae tendineae is used to replace the linear constitutive law, we find that the strain level of  MV leaflets is larger than that of the linear model, but still within the ranges reported in\,\cite{Jimenez2007A}.
+
+Additionally, we have compared several quantities to evaluate three different material models of MV leaflets, including the peak jet velocity, the closure regurgitation volume and the orifice area. The difference in peak velocity is minor for the three cases  according to Table~\ref{fv}. As for the amount of regurgitation flow, case M2 has the lowest regurgitant volume and M3 has the highest regurgitant volume. Table~\ref{OA} shows that case M1 has the biggest orifice area when fully opened and the smallest when just closed. The orifice area values at fully-opened state are within the interval (4-6cm$^2$) reported\,\cite{LuoGriffith-2012}.
+
+%\textcolor{blue}{Recently, there are some new researches about the biomechanical properties of mitral valve. Dimasi \cite{RN2} et al. used in vitro and fluid-structure interaction (FSI) modeling to simulate the function of a real mitral bileaflet mechanical valve in normal and stenotic with symmetric and asymmetric leaflet opening. Meanwhile, they computed the transvalvular mean pressure gradient from FSI simulation and the Doppler-like post-processing approach, and compared the transvalvular mean pressure gradient values in differernt configurations. Sacks \cite{RN1} et al. presented the MV modeling and showed the state-of-the-art means to establish patient-specific MV computational models to develop quantitatively optimized devices and procedures for MV repair. They simulated the MV of different models in normal and ischemic mitral regurgitation states and analysed their underlying mechanobiology. Based on these researches, we can look for a more realistic mitral valve model and analyse the biomechanical properties in different conditions, so as to providing theoretical supports for relevant diagnosis and therapies.}
+
+
+
+\section*{Methods}
+
+\subsection*{IB/FE method}
+
+The IB/FE method developed by Griffith and Luo\,\cite{Boyce2017Hybrid} is employed to simulate  MV dynamics in this study. The governing equations of the FSI system are
+
+\begin{eqnarray}
+&&\rho \left( {\frac{{\partial {\mathbf{u}}}}{{\partial t}}\left( {{\mathbf{x}},t} \right) + {\mathbf{u}}\left( {{\mathbf{x}},t} \right) \cdot \nabla {\mathbf{u}}\left( {{\mathbf{x}},t} \right)} \right) =  - \nabla p\left( {{\mathbf{x}},t} \right) + \mu {\nabla ^2}{\mathbf{u}}\left( {{\mathbf{x}},t} \right) + {{\mathbf{f}}^{\text{e}}}\left( {{\mathbf{x}},t} \right),\\
+&&\nabla  \cdot {\mathbf{u}}\left( {{\mathbf{x}},t} \right) = 0,\\
+&&{{\mathbf{f}}^{\text{e}}}\left( {{\mathbf{x}},t} \right){\text{ = }}\int_E {{{\mathbf{F}}^{\text{e}}}\left( {{\mathbf{X}},t} \right)\delta \left( {{\mathbf{x}} - \chi \left( {{\mathbf{X}},t} \right)} \right){\text{d}}{\mathbf{X}}},\\
+&&\frac{{\partial \chi \left( {{\mathbf{X}},t} \right)}}{{\partial t}}{\text{ = }}\int_\Omega  {{\mathbf{u}}\left( {{\mathbf{x}},t} \right)\delta \left( {{\mathbf{x}} - \chi \left( {{\mathbf{X}},t} \right)} \right){\text{d}}{\mathbf{x}}},\\
+&&\int_{E}\mathbf{F}(\mathbf{X},t)\cdot\mathbf{V}(\mathbf{X})d\mathbf{X}=-\int_{E}\mathbf{P}^{\mathrm{e}}:\nabla \mathbf{V}(\mathbf{X}){\text{d}}\mathbf{X}.
+\label{FC}
+\end{eqnarray}
+where ${\mathbf{X}} = (X_{1},X_{2},X_{3}) \in E$ denotes the material (Lagrangian) coordinates in the reference configuration, ${\mathbf{x}} = (x_{1},x_{2},x_{3})\in\Omega$ denotes the Cartesian (Eulerian) coordinates. $\Omega \subset R^{3}$ denotes the physical region occupied by the fluid-structure system, and $E \subset R^{3}$ denotes the region occupied by the immersed structure (such as the mitral valve, chordae tendineae, etc) in the reference configuration. $\rho$ is the fluid density, $p({\mathbf{x}}, t)$ is the Eulerian pressure, and $\mu$ is the viscosity.  $\chi ({\mathbf{X}},t)\in\Omega$ gives the physical position of material point ${\mathbf{X}}$ at time $t$. Therefore, the physical region occupied by the structure at time $t$ is $\Omega^{e}(t)=\chi(E,t)$, and the physical domain occupied by the fluid at time $t$ is $\Omega^{f}(t)=\Omega-\Omega^{e}(t)$. A three-dimensional regularised delta function $\delta({\mathbf{x}}) = \delta(x_{1}) \delta(x_{2}) \delta(x_{3})$ was used to describe the fluid-structure interaction, which implies that the IB/FE approach permits nonconforming discretization of the fluid and structure domains. $\mathbf{P}^{\text{e}}=\frac{\partial \Psi}{\partial \mathbf{F}}$ is the first Piola-Kirchhoff (PK) stress tensor, which is calculated from  a strain-invariant based strain energy function $\Psi$.
+
+The total Cauchy stress tensor of the coupled fluid-structure system is
+
+\begin{equation}\label{equ33}
+\bm{\sigma}\left( {{\mathbf{x}},t} \right) = {\sigma ^{\text{f}}}\left( {{\mathbf{x}},t} \right) + \left\{ \begin{gathered}
+{\sigma^{\text{e}}}\left( {{\mathbf{x}},t} \right){\text{    }}\quad \mathrm{for}\ {\mathbf{x}} \in {\Omega ^{\text{e}}}\hfill \\
+0{\text{               }}\qquad\qquad \mathrm{otherwise}  \hfill \\
+\end{gathered}  \right.
+\end{equation}
+where ${\sigma ^{\text{f}}} =  - p\left( {{\mathbf{x}},t} \right)\mathbf{I}+ \mu \left[ {\nabla {\mathbf{u}}\left( {{\mathbf{x}},t} \right) + {{\left( {\nabla {\mathbf{u}}\left( {{\mathbf{x}},t} \right)} \right)}^{\text{T}}}} \right]$  is the fluid-like stress tensor. $\mathbf{I}$ is the identity matrix, and $\sigma^{e}$ is the elastic stress tensor, defined as
+
+\begin{equation}\label{equ33}
+\V{\sigma} ^{\text{e}} =
+\left\{ \begin{gathered}
+J^{-1}\mathbf{P}^{\text{e}}\mathbf{F}^{\text{T}} {\text{    }}\qquad \mathrm{for} \ \mathbf{x}\in \Omega^{\text{e}}  \hfill \\
+0{\text{                  }}\qquad\qquad \mathrm{otherwise} \hfill \\
+\end{gathered}  \right.
+\end{equation}
+where $\mathbf{F}=\frac{\partial \V{\chi}}{\partial \mathbf{X}}$ is the  deformation gradient and $J = \det(\mathbf{F})$.
+
+\subsection*{Constitutive laws and  parameters}
+
+Biological tissues usually can be modeled as nonlinear elastic materials, and their material parameters could be obtained from uniaxial or biaxial tensile testing, in which tissue samples are subjected to various stretching configurations along different directions. MV anatomy experiments show that valve tissue is basically composed of fibrous tissue\,\cite{Schoen1999Tissue,Zuo2016Characterization}, mainly collagen and elastin, and the liquid (mainly water). At low strain, the wavy structure can be extended by relatively low stress, but with the increase of strain, the fiber straightens gradually and the overall response of the structure becomes more rigid. To determine material parameters, an inverse problem is usually formulated by minimizing the differences between the predicted stretch-stress data derived from selected constitutive laws and experimentally measured data, that is
+%The different constitutive models of valve tissue are selected for numerical simulation, and the data are fitted with the experimental data, that is to say, the problem is transformed into a goal optimization problem. The optimization model\cite{Storn1997Differential} is defined as
+\begin{equation}
+\begin{split}
+\arg \min\limits_{c_{1},c_{2},c_{3},\cdot\cdot\cdot}\quad &\sum [(\bm\sigma_{11}^{\mathrm{model}}-\bm\sigma_{11}^{\mathrm{exp}})^{2}+(\bm\sigma_{22}^{\mathrm{model}}-\bm\sigma_{22}^{\mathrm{exp}})^{2}+\cdot\cdot\cdot]\\
+&c_{i}>g_i
+\label{YH}
+\end{split}
+\end{equation}
+where $c_{i}$ ($i\geq 1$) are non-negative material parameters and $g_i$ are  constraints of constitutive constants, i.e. $>0$, and $\bm\sigma^{\mathrm{model}}$ is calculated from some constitutive laws, $\bm\sigma^{\mathrm{exp}}$ are experimental measurements.
+
+\subsubsection*{The constitutive laws of the mitral valve leaflets}
+In this study, three fiber-reinforced strain energy functions (cases M1, M2 and M3, Eq.\,\ref{eq:W}) are chosen to characterize the mechanical responses of MV leaflets, all are based on strain invariants of $ I_{1} $ and $ I_{4}$,  respectively, and
+$$I_{1}=\text{tr} \, \mathbf{C}, \quad \quad I_{4}=\mathbf{a}_{0}\cdot (\mathbf{C}\mathbf{a}_{0}),$$
+in which $\V{C} = \V{F}^T\,\V{F}$ is the Cauchy-Green deformation tensor, $\V{a}_0$ is the collagen fiber direction at reference state, which is an unit vector. $I_1$ represents the overall deformation, usually is used to describe the isotropic matrix property, and $I_4$ is the squared stretch along the collagen fiber direction.
+
+\begin{eqnarray}
+\begin{split}
+&&\text{M}1:\quad\Psi (I_{1},I_{4})=&c(I_{1}-3)+\frac{a}{2b}\left( \exp[{b(I_{4}-1)^{2}}]-1\right) ,
+\\
+&&\text{M}2:\quad\Psi (I_{1},I_{4})=&\bar{c}_{0}\left( \exp[\bar{c}_{1}(I_{1}-3)^{2}+\bar{c}_{2}(\sqrt{I_{4}}-1)^{4}]-1\right) ,
+\\
+&&\text{M}3:\quad\Psi (I_{1},I_{4})=&c_{0}\left( \exp[c_{1}(I_{1}-3)^{2}+c_{2}(I_{4}-1)^{2}]-1\right) ,
+\end{split}
+\label{eq:W}
+\end{eqnarray}
+where $c$, $a$, $b$, $\bar{c}_{0}$,~$\bar{c}_{1}$,~$\bar{c}_{2}$ and~$c_{0}$,~$c_{1}$,~$c_{2}$ are the non-negative material parameters. We assume collagen fibers can only bear the load when they are stretched, but not in compression, thus $I_4$ in Eq.\,\ref{eq:W} are replaced by $I_4^* = \max({I_4, 1})$. These three constitutive laws of the valve leaflets are all transversely isotropic materials, case M1 was used in paper\,\cite{Hao2014A}, case M2 was used in paper\,\cite{Prot2006An}, and case M3 was from the papers\,\cite{Prot2009Nonlinear,Prot2009Finite}.
+
+The corresponding Cauchy-stress tensor for the three selected strain energy functions are
+\begin{eqnarray}
+\begin{split}
+&&\V{\sigma}^\text{M1}=&-\lambda \mathbf{I}+2\mathbf{F}\frac{\partial \Psi}{\partial \mathbf{C}}\mathbf{F}^{T}\\
+&&=&-\lambda\mathbf{I}+2c\mathbf{B}+2a(I_{4})\exp^{b(I_{4}-1)^{2}}\cdot \V{F} \V{a_0}\otimes \V{F}\V{a_0},\label{eq:sigma2}\\
+&&\V\sigma^{\text{M2}}=&-\lambda \mathbf{I}+2\mathbf{F}\frac{\partial \Psi}{\partial \mathbf{C}}\mathbf{F}^{T}\\
+&&=&-\lambda\mathbf{I}+4\bar{c}_{0}\exp[\bar{c}_{1}(I_{1}-3)^{2}+\bar{c}_{2}(\sqrt{I_{4}}-1)^{4}][\bar{c}_{1}(I_{1}-3)\mathbf{B}
++\bar{c}_{2}(\sqrt{I_{4}}-1)^{3}\frac{1}{\sqrt{I_{4}}}\cdot \mathbf{F}\mathbf{a}_{0}\otimes \mathbf{F}\mathbf{a}_{0}],\label{eq:sigma3}\\
+&&\V\sigma^{\text{M3}}=&-\lambda \mathbf{I}+2\mathbf{F}\frac{\partial \Psi}{\partial \mathbf{C}}\mathbf{F}^{T}\\
+&&=&-\lambda\mathbf{I}+4c_{0}\exp[c_{1}(I_{1}-3)^{2}+c_{2}(I_{4}-1)^{2}][c_{1}(I_{1}-3)\mathbf{B}+c_{2}(I_{4}-1)\cdot\mathbf{F}\mathbf{a}_{0}\otimes \mathbf{F}\mathbf{a}_{0}]\label{eq:sigma4},
+\end{split}
+\end{eqnarray}
+in which $\lambda$ is a Lagrangian multiplier to enforce the incompressibility, and $\V{B} = \V{F}\V{F}^T$.
+
+Parameters for the strain energy function M1 are from Gao et al.\,\cite{Hao2014A}, which are derived from the in vitro testing on a healthy human MV carried out by Wang et al.\,\cite{Qian2013Finite}. The parameters of case M1 are shown in the Table~\ref{tab:W1}. Parameters in cases M2 and M3 are determined by using a ``pseudo'' biaxial stretching experiments along fiber  and cross-fiber directions using case M1. The \textit{fmincon} function in MATLAB is employed to determine the parameters of constitutive laws M2 and M3 by using the Cauchy stress formulas (Eq.\,\ref{eq:sigma3}) by minimizing Eq.\,\ref{YH}. The fitted stretch-stress curves for all three laws are given in Figs.\,\ref{A_1}-\ref{P_1} , and the estimated parameters of cases M2 and M3 are listed in Table~\ref{WW1}, including the average errors.  
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf The constitutive parameters of \text{M}1.}
+	\label{tab:W1}
+	\begin{tabular}{cccc}
+		\hline
+		Parameters & $c$(kPa) & $a$(kPa) & $b$\\\hline
+		Anterior leaflet  & 17.4 & 31.3 & 55.93 \\\hline
+		Posterior leaflet & 10.2 & 50.0 & 63.48 \\\hline
+	\end{tabular}
+\end{table}
+
+We further fit the three constitutive laws from Eq.\,\ref{eq:W} to an in vitro biaxial stretching experiment on porcine MV samples. In brief, fresh porcine MV samples were harvested from a local abattoir. Specimens of MV and chordae were then dissected and stored in $4 ^{\circ}\mathrm{C}$ phosphate buffer saline (PBS) before test and submerged in $37 ^{\circ}\mathrm{C}$ PBS bath during test. Planar biaxial tensile test was conducted with a CellScale BioTester (Waterloo, ON, Canada) with 10N load-cell on MV samples, while uniaxial tensile test (Instron Industrial Products, US) was carried out on chordae samples. The tissue specimens were stretched and released for 8 complete cycles for preconditioning until the load-displacement curve was visibly repeatable. Finally, the MV and chordae specimens were stretched to 1500mN and 5N to cover the physiological condition, respectively. The displacement and tensile forces were recorded and used for stress and strain analysis. The thickness of specimens was  measured by a digital caliper ($\pm0.01$mm) three times on random location before the test. We find that all three constitutive laws can fit the experimental data very well as can be seen from Fig.\,\ref{AP}, among which cases 1,2 and 3 represent the three sets of MV data from three hearts.  The model M2 shows the best fitting although the difference is small.  Corresponding R-squared values are reported in Tables~\ref{WW3}-\ref{WW4}, all have minor differences for the anterior and posterior leaflet respectively, which suggests that these selected three constitutive laws are suitable for characterizing MV leaflets properties. Thus, we will mainly compare their effects on the MV dynamics using a FSI solver in this study. 
+
+%In order to evaluate three constitutive laws (cases M1, M2 and M3) from fitting, we calculate the square errors between the constitutive laws and tensile testing data obtained from relevant experiments.
+
+\begin{figure}[!ht]
+	\begin{minipage}[t]{0.5\textwidth}
+		\centering
+		\includegraphics[scale=1]{r8.pdf}
+		\caption{\bf The stretch-stress relationships for the anterior leaflet along  fiber direction.}
+		\label{A_1}
+	\end{minipage}
+	\begin{minipage}[t]{0.5\textwidth}
+		\centering
+		\includegraphics[scale=1]{r9.pdf}
+		\caption{\bf The stretch-stress relationships for the posterior leaflet along fiber direction.}
+		\label{P_1}
+	\end{minipage}
+\end{figure}
+
+\begin{minipage}{\textwidth}
+	\begin{minipage}[t]{1\textwidth}
+		\centering
+		\makeatletter\def\@captype{table}\makeatother\caption{ \bf The constitutive parameters of \text{M}2 and \text{M}3.}
+		\label{WW1}
+		\begin{tabular}{ccccc}
+			\hline
+			Parameters of \text{M}2 & $\bar{c}_{0}$(kPa) & $\bar{c}_{1}$(kPa)  & $\bar{c}_{2}$ & Average error\\\hline
+			Anterior leaflet  & 7.69  & 69.42 & 0.0008  & 15.0 \\\hline
+			Posterior leaflet & 13.99 & 80.22 & 0.1447  & 57.1 \\\hline
+			Parameters of \text{M}3 & $c_{0}$(kPa) & $c_{1}$(kPa)  & $c_{2}$ & Average error\\\hline
+			Anterior leaflet  & 0.29 & 0.47 & 55.39 & 10.4 \\\hline
+			Posterior leaflet & 0.44 & 2.58 & 61.46 &  3.6 \\\hline
+		\end{tabular}
+	\end{minipage}
+\end{minipage}
+
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[scale=0.98]{r10.pdf}
+    \caption{\bf Fitting the three constitutive laws (Eq.\,\ref{eq:W}) to our own bi-axial porcine experimental data for the anterior leaflet (panels a, c and e) and the posterior leaflet (panels b, d and f). Case 1 (panels a and b), Case 2 (panels c and d), Case 3 (panels e and f).}
+    \label{AP}
+\end{figure}
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf R-squared values of fitting the anterior leaflet with three constitutive laws in Eq.\,\ref{eq:W} to our porcine MV experiments. \footnotesize{SSE is the residual sum of squares, SST denotes the total sum of squares.}}
+	\begin{tabular}{cccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		& \multicolumn{3}{c}{$\text{R-squared}=1-{\mathrm{SSE}}/{\mathrm{SST}}$} \\\cline{2-4}
+		Anterior leaflet & M1 & M2 & M3 \\\hline
+	    Case1 & 0.9904 & 0.9734 & 0.9532 \\
+		Case2 & 0.9810 & 0.9822 & 0.9929 \\
+		Case3 & 0.8987 & 0.9056 & 0.8909 \\
+		Average value & 0.9567 & 0.9537 & 0.9457 \\
+		\hline
+	\end{tabular}
+	\label{WW3}
+\end{table}
+
+\begin{table}[!h]
+	\centering
+	\caption{\bf R-squared values of fitting the posterior leaflet with three constitutive laws in Eq.\,\ref{eq:W} to our porcine MV experiments. \footnotesize{SSE is the residual sum of squares, SST denotes the total sum of squares.}}
+	\begin{tabular}{cccc}
+		\hline
+		% after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+		& \multicolumn{3}{c}{$\text{R-squared}=1-{\mathrm{SSE}}/{\mathrm{SST}}$} \\\cline{2-4}
+		Posterior leaflet & M1 & M2 & M3 \\\hline
+		Case1 & 0.9472 & 0.9799 & 0.9561 \\
+		Case2 & 0.9722 & 0.9822 & 0.9707 \\
+		Case3 & 0.7742 & 0.8112 & 0.8122 \\
+		Average value & 0.8979 & 0.9244 & 0.9130 \\
+		\hline
+	\end{tabular}
+	\label{WW4}
+\end{table}
+%\textcolor{blue}{By further fitting cases M1, M2 and M3 to our own experimental data on porcine MV leaflets, . Based on these, we use MATLAB to calculate the coefficient of determination (i.e. R-square value) by		$$\mathrm{R-square}=1-\frac{\mathrm{SSE}}{\mathrm{SST}}$$
+%where SSE is the sum of square due to error, SST denotes the sum of square between the experimental data and the mean value of experimental data. R-square values of three cases are more than 0.9, so we consider all three constitutive laws are pretty good to fit experimental data. Therefore, we mainly compare mechanical properties of three MV leaflets material models.}
+
+
+
+
+\subsubsection*{The constitutive laws of the chordae tendineae}
+Two constitutive laws are chosen for the chordae tendineae, one is the neo-hooken material model\,\cite{Hao2014A}, and the second one is the exponential model\,\cite{Prot2009Finite}, they are
+\begin{equation}
+\begin{split}
+&&\Psi=&C(I_{1}-3), \\
+&&\Psi=&a_{1}\left(\exp[a_{2}(I_{1}-3)]-1\right) .
+\label{eq:ch}
+\end{split}
+\end{equation}
+in which $C, a_1$, and $a_2$ are material constants. The Cauchy stress for the two chordae constitutive laws are
+
+\begin{equation}
+\begin{split}
+&&\bm{\sigma}=&-\lambda\mathbf{I}+C\mathbf{B},\\
+&&\bm{\sigma}=&-\lambda\mathbf{I}+2a_{1}\exp[a_{2}(I_{1}-3)]\mathbf{B}.
+\end{split}
+\label{eq:WW1}
+\end{equation}
+
+%Parameters for the experimental stress of the chordae tendineae are from the paper\cite{Zuo2016Characterization},
+Fig.\,\ref{fig:chd} shows the fitted stretch-stress curves with the two chordae constitutive laws to our own uniaxial tensile testing experimental data  from Dr.\,Ma's Lab using porcine MV chordae tendineae. It can be found that nonlinear mechanical property of the chordae tendineae can only be better represented by the exponential law. 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[scale=1]{r11.pdf}
+	\renewcommand{\figurename}{Figure}
+	\caption{{\bf The fitted stretch-stress relationships for the chordae tendineae.}}
+	\label{fig:chd}
+\end{figure}
+
+\subsection*{The MV model and boundary conditions}
+The MV model is reconstructed from a cardiac magnetic resonance (CMR) imaging of a healthy volunteer, and the leaflets are reconstructed at mid-diastole, and a pseudo-chordae structure is used because the CMR imaging cannot describe the chordal structure in vivo due to resolution limitation. Details of the MV geometry reconstruction can be found in our previous study\,\cite{Hao2014A,Xingshuang2013Image}. Fig.\,\ref{M1} shows the MV with the chordae tendineae, mounted in a housing and then attached to a straight tube (length: 16\,cm, radius: 3.8\,cm), and immersed into a fluid domain with size  $10$cm$\times 10$cm$\times 16$cm, which is discretized into $80\times 80\times 128$ regular grids.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[scale=1]{r12.pdf}
+	\caption{\bf The IB/FE MV model}
+	\label{M1}
+\end{figure}
+
+An explicit version of Crank Nicolson-Adams Backward scheme is used for time stepping, which requires a relatively small time step size ($10^{-5}$s). The IB/FE MV model  is implemented within the open-source IBAMR software framework (https://github.com/IBAMR/IBAMR). The boundary conditions are the same as in paper\,\cite{Hao2014A}, in brief, pressure boundary conditions are applied to the inlet of the straight tube, pressure profile is shown in Fig.\,\ref{PP}.  Zero pressure boundary conditions are applied along the rest of the boundaries of the whole computational domain. The housing and the straight tube are fixed in place. CMR measured displacements of the papillary muscles are applied to the chordae attachment points where the chordae tendineae connects the papillary muscles. Further details of the MV model implementation can be found in\,\cite{Hao2014A}.
+%Note that the MV leaflets are free to move. Only the fast filling periods in diastole and systole are numerically simulated. Rapid diastolic filling lasts about  $0.2$ms, during which  80\% blood flow occurs through the mitral valve. Being lack of left ventricle in this study, the slow filling period during diastole and atrial contraction are not simulated.
+
+\begin{figure}[!hpt]
+	\centering
+	\includegraphics[scale=1]{r13.pdf}
+	\caption{\bf Typical human pressure profiles of MV}
+	\label{PP}
+\end{figure}
+
+\subsection*{Limitations} Finally, we mention the limitations of this study.  Though we have incorporated FSI and nonlinear constitutive laws for valve leaflets and chordae tendineae.  We have ignored the valve-heart interactions, which will have some impact on the dynamic loading conditions \,\cite{Gao2017A}.  In addition,  our geometric structure is based on a simplified model of chordae tendineae, whereas the realistic chordae tendineae consists of  marginal, strut and basal chordae tendineae\,\cite{Toma2016Fluid}.    We leave investigation of these effects to future research. 
+\bibliography{sample1}
+
+
+\section*{Acknowledgements}
+
+This research is supported by the National Natural Science Foundation of China (Grant Nos. 11871399, 11471261, 11571275), and the Natural Science Foundation of Shaanxi (Grant No. 2017JM1005).  HG and XYL also acknowledge the funding from the  Engineering and Physical Sciences Research Council (EPSRC)of the UK (Grant no: EP/N014642/1)
+
+
+\section*{Author contributions statement}
+
+L.~Cai, and Y.~Wang contributed equally to this paper. Y.~Wang and R.H.~Zhang performed the numerical modelling and wrote the manuscript. L.~Cai, H.~Gao and  X.Y.~Luo supervised the overall project. X.S.~Ma and G.Y.~Zhu provided relevant experimental data. All authors analyzed the results, read and edited the manuscript.
+
+\section*{Additional information}
+
+Competing Interests: The authors declare that they have no competing interests.
+
+
+\end{document}
+
